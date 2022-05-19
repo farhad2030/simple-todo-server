@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+require("dotenv").config();
 var jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
@@ -37,6 +38,34 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+    await client.connect();
+    const taskCollection = client.db("Simple-Todo").collection("task");
+
+    // apis
+    app.post("/task", async (req, res) => {
+      const task = req.body;
+      const result = await taskCollection.insertOne(task);
+      res.send(result);
+    });
+    app.get("/task", async (req, res) => {
+      const query = {};
+      const cursor = taskCollection.find(query);
+      const task = await cursor.toArray();
+      res.send(task);
+    });
+
+    app.put("/task/:id", async (req, res) => {
+      const id = req.params.id;
+      const dataStatus = req.body;
+      const filter = { _id: ObjectId(id) };
+      console.log(dataStatus, id);
+      const result = taskCollection.updateOne(
+        filter,
+        { $set: dataStatus },
+        { upsert: true }
+      );
+      res.send(result);
+    });
   } finally {
   }
 }
